@@ -49,9 +49,11 @@
   <script>
     // ---- Tags: name and color. Higher in the list = higher priority. ----
     // With "Color by tag" on, each event takes the color of its highest-priority tag.
+    // Add hidden: true to leave a tag unchecked in the filters when the page loads.
     const TAGS = [
-      { name: "personal events", color: "#50c878" },  // emerald
-      { name: "historical figures", color: "#008080" }, // teal
+      { name: "Allison",            color: "#009473" },  // emerald (personal events)
+      { name: "historical figures", color: "#008080" },  // teal
+      { name: "books",              color: "#4a148c", hidden: true },  // dark purple
       { name: "society",         color: "#e4572e" },
       { name: "technology",      color: "#d6457a" },
       { name: "science",         color: "#1f77b4" },
@@ -81,10 +83,30 @@
       { ago: 300e3,  label: "Homo sapiens", tags: ["life"] },
       { year: -10000, label: "Agriculture", tags: ["society"] },
       { year: -3200, label: "Writing", tags: ["society"] },
-      { year: -750,  label: "Homer's Iliad first told", tags: ["historical figures", "society"], note: "c. 8th century BCE, as oral poetry" },
+      { year: -750,  label: "Homer's Iliad first told", tags: ["historical figures", "society", "books"], note: "c. 8th century BCE, as oral poetry" },
       { year: -600,  label: "Oldest surviving Bible text", tags: ["historical figures", "society"], note: "c. 600 BCE, the Ketef Hinnom silver scrolls. Parts of the Hebrew Bible were composed earlier." },
       { year: -399,  label: "Death of Socrates", tags: ["historical figures"] },
       { year: 30,    label: "Crucifixion of Jesus", tags: ["historical figures"], note: "c. 30 to 33 CE" },
+      // Books: dated to when each started spreading (first telling, serialization, or publication)
+      { year: -1000, label: "Old Testament", tags: ["books"], note: "c. 1000 BCE onward. Written over centuries; the Torah was largely compiled by c. 450 BCE." },
+      { year: -725,  label: "Homer's Odyssey first told", tags: ["books"], note: "c. late 8th century BCE, as oral poetry" },
+      { year: 50,    label: "New Testament written", tags: ["books"], note: "c. 50 to 100 CE" },
+      { year: 610,   label: "Quran", tags: ["books"], note: "Revealed 610 to 632 CE, compiled c. 650" },
+      { date: "1813-01-28", label: "Pride and Prejudice", tags: ["books"] },
+      { date: "1843-10-16", label: "Fear and Trembling (Kierkegaard)", tags: ["books"] },
+      { date: "1866-01",    label: "Crime and Punishment", tags: ["books"], note: "Serialized from January 1866" },
+      { date: "1868-09-30", label: "Little Women", tags: ["books"] },
+      { date: "1875-01",    label: "Anna Karenina", tags: ["books"], note: "Serialized 1875 to 1877" },
+      { date: "1879-01",    label: "The Brothers Karamazov", tags: ["books"], note: "Serialized 1879 to 1880" },
+      { year: 1887,         label: "On the Genealogy of Morals (Nietzsche)", tags: ["books"] },
+      { date: "1927-05-05", label: "To the Lighthouse", tags: ["books"] },
+      { date: "1937-09-21", label: "The Hobbit", tags: ["books"] },
+      { date: "1947",       label: "Dead Sea Scrolls discovered", tags: ["books"], note: "The oldest known Bible manuscripts at the time" },
+      { date: "1954-07-29", label: "The Lord of the Rings", tags: ["books"], note: "Published in three volumes, 1954 to 1955" },
+      { date: "1963-12",    label: "Dune", tags: ["books"], note: "Serialized in Analog from December 1963; novel 1965" },
+      { date: "1977-09-15", label: "The Silmarillion", tags: ["books"] },
+      { date: "1978-03-08", label: "The Hitchhiker's Guide to the Galaxy", tags: ["books"], note: "Began as a BBC radio series; novel 1979" },
+      { date: "1997-06-26", label: "Harry Potter and the Sorcerer's Stone", tags: ["books"], note: "Published in the UK as the Philosopher's Stone" },
       { year: 1440,  label: "Printing press", tags: ["technology", "society"] },
       { year: 1760,  label: "Industrial Revolution", tags: ["technology", "society"] },
       { year: 1969,  label: "Moon landing", tags: ["space", "technology"] },
@@ -92,8 +114,9 @@
 
     const RECENT = [
       { date: "1999-01-01", label: "Euro introduced", tags: ["society"] },
-      { date: "1999-05-27", label: "Born in Houston, TX", tags: ["personal events"] },
-      { date: "2022-05", label: "Graduated college", tags: ["personal events"] },
+      { date: "1999-05-27", label: "Born in Houston, TX", tags: ["Allison"] },
+      { date: "2022-05", label: "Graduated college", tags: ["Allison"] },
+      { date: "2003-08-26", label: "Eragon", tags: ["books"], note: "Wide release by Knopf, after a self-published edition by the Paolini family" },
       { date: "2004-02-04", label: "Facebook launches", tags: ["technology"] },
       { date: "2007-06-29", label: "iPhone released", tags: ["technology"] },
       { date: "2008-09-15", label: "Lehman Brothers collapses", tags: ["society"] },
@@ -130,7 +153,7 @@
       if (y < -10000) return short ? sig(ago / 1e3) + "k ya" : sig(ago, 2) + " years ago";
       if (y < 0) return Math.round(-y).toLocaleString("en-US") + " BCE";
       if (ago < 0.5) return "now";
-      return String(Math.round(y));
+      return String(short ? Math.round(y) : Math.floor(y + 1e-9));
     }
 
     const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -199,7 +222,8 @@
       // Tag filter
       const tagNames = [...new Set(events.flatMap(e => e.tags))].sort((a, b) => tagRank(a) - tagRank(b));
       if (events.some(e => !e.tags.length)) tagNames.push(UNTAGGED);
-      const selected = new Set(tagNames);
+      const isHiddenTag = name => !!(TAGS.find(t => t.name === name) || {}).hidden;
+      const selected = new Set(tagNames.filter(n => !isHiddenTag(n)));
       const isShown = e => e.tags.length ? e.tags.some(t => selected.has(t)) : selected.has(UNTAGGED);
       const colorOf = e => {
         if (!colorOn) return null;
@@ -215,7 +239,7 @@
           const lab = make("label", "", filters);
           const box = make("input", "", lab);
           box.type = "checkbox";
-          box.checked = true;
+          box.checked = selected.has(name);
           box.addEventListener("change", () => {
             if (box.checked) selected.add(name); else selected.delete(name);
             render();
