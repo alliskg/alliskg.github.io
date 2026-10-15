@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Timelines</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    .controls { font-size: 14px; margin: 8px 0; display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+    .status { color: #555; }
+    .strip { position: relative; height: 112px; border-bottom: 1px solid #333; cursor: crosshair; user-select: none; -webkit-user-select: none; touch-action: none; overflow: hidden; }
+    .lbl { position: absolute; bottom: 0; font-size: 12px; line-height: 17px; white-space: nowrap; border-left: 1px solid #999; padding-left: 3px; }
+    .lbl.right { border-left: none; border-right: 1px solid #999; padding-left: 0; padding-right: 3px; }
+    .tick { position: absolute; bottom: 0; width: 1px; height: 8px; background: #999; }
+    .sel { position: absolute; top: 0; bottom: 0; background: rgba(0, 0, 0, 0.1); display: none; pointer-events: none; }
+    .axis { position: relative; height: 18px; font-size: 11px; color: #555; overflow: hidden; }
+    .axis span { position: absolute; top: 2px; white-space: nowrap; }
+    .list { margin: 8px 0 0; }
+    .ev { display: flex; flex-wrap: wrap; gap: 0 12px; padding: 2px 0; }
+    .when { color: #555; min-width: 12em; }
+    .gap { box-sizing: border-box; margin-left: 5px; padding-left: 12px; border-left: 2px dotted #aaa; font-size: 12px; color: #777; display: flex; align-items: center; }
+  </style>
+</head>
+<body>
+  <p><a href="index.html">← Home</a></p>
+
+  <h1>Timelines</h1>
+
+  <h2>Motive</h2>
+  <p>I want a feel for where things sit in time, and for how much time sits between them. Each timeline shows the same events twice. The bar is to scale, so you can see how much of history collapses into the right edge. The list below it goes event by event, with the size of each gap written out.</p>
+  <p>Drag across a bar to zoom into that stretch. Double-click the bar or press Reset to zoom back out.</p>
+
+  <h2>From the beginning</h2>
+  <div class="timeline" id="deep"></div>
+
+  <h2>1999 to now</h2>
+  <div class="timeline" id="recent"></div>
+
+  <script>
+    // ---- Events: add more here. Order doesn't matter. ----
+    // Use { ago: years-before-now }, { year: N } (negative = BCE), or { date: "YYYY-MM-DD" }.
+    // An optional note: "..." shows next to the event in the list.
+    const DEEP = [
+      { ago: 13.8e9, label: "Big Bang" },
+      { ago: 13.6e9, label: "First stars" },
+      { ago: 4.6e9,  label: "Sun and Solar System form" },
+      { ago: 4.54e9, label: "Earth forms" },
+      { ago: 4.5e9,  label: "Moon forms" },
+      { ago: 3.7e9,  label: "Earliest evidence of life" },
+      { ago: 2.4e9,  label: "Great Oxidation Event" },
+      { ago: 2.0e9,  label: "First complex (eukaryotic) cells" },
+      { ago: 538e6,  label: "Cambrian explosion" },
+      { ago: 470e6,  label: "First land plants" },
+      { ago: 375e6,  label: "First four-limbed animals on land" },
+      { ago: 252e6,  label: "Permian mass extinction" },
+      { ago: 230e6,  label: "First dinosaurs" },
+      { ago: 66e6,   label: "Dinosaurs go extinct" },
+      { ago: 300e3,  label: "Homo sapiens" },
+      { year: -10000, label: "Agriculture" },
+      { year: -3200, label: "Writing" },
+      { year: 1440,  label: "Printing press" },
+      { year: 1760,  label: "Industrial Revolution" },
+      { year: 1969,  label: "Moon landing" },
+    ];
+
+    const RECENT = [
+      { date: "1999-01-01", label: "Euro introduced" },
+      { date: "2004-02-04", label: "Facebook launches" },
+      { date: "2007-06-29", label: "iPhone released" },
+      { date: "2008-09-15", label: "Lehman Brothers collapses" },
+      { date: "2012-07-04", label: "Higgs boson discovery announced" },
+      { date: "2015-09-14", label: "First gravitational waves detected" },
+      { date: "2017-06-12", label: "Transformer paper published" },
+      { date: "2020-03-11", label: "COVID-19 declared a pandemic" },
+      { date: "2022-11-30", label: "ChatGPT released" },
+    ];
+    // ---- End of events ----
+
+    function fracYear(y, m = 1, d = 1) {
+      const a = Date.UTC(y, 0, 1), b = Date.UTC(y + 1, 0, 1);
+      return y + (Date.UTC(y, m - 1, d) - a) / (b - a);
+    }
+    const today = new Date();
+    const NOW = fracYear(today.getFullYear(), today.getMonth() + 1, today.getDate());
+
+    function toYear(e) {
+      if ("ago" in e) return NOW - e.ago;
+      if ("date" in e) {
+        const [y, m, d] = e.date.split("-").map(Number);
+        return fracYear(y, m || 1, d || 1);
+      }
+      return e.year;
+    }
+
+    const sig = (n, p = 3) => parseFloat(n.toPrecision(p)).toLocaleString("en-US");
+
+    function fmtDeep(y, short) {
+      const ago = NOW - y;
+      if (ago >= 1e9) return sig(ago / 1e9) + (short ? " Bya" : " billion years ago");
+      if (ago >= 1e6) return sig(ago / 1e6) + (short ? " Mya" : " million years ago");
+      if (y < -10000) return short ? sig(ago / 1e3) + "k ya" : sig(ago, 2) + " years ago";
+      if (y < 0) return Math.round(-y).toLocaleString("en-US") + " BCE";
+      if (ago < 0.5) return "now";
+      return String(Math.round(y));
+    }
+
+    const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    function fmtRecent(y, short, span) {
+      if (short && NOW - y < 1 / 365.25) return "now";
+      if (short && span > 8) return String(Math.round(y));
+      const yr = Math.floor(y);
+      const m = Math.min(11, Math.floor((y - yr) * 12));
+      return MON[m] + " " + yr;
+    }
+
+    function fmtGap(g) {
+      if (g >= 1e9) return sig(g / 1e9, 2) + " billion years";
+      if (g >= 1e6) return sig(g / 1e6, 2) + " million years";
+      if (g >= 1e4) return sig(g, 2) + " years";
+      if (g >= 1.5) return Math.round(g).toLocaleString("en-US") + " years";
+      if (g >= 11.5 / 12) return "1 year";
+      const m = Math.round(g * 12);
+      if (m >= 1) return m + (m === 1 ? " month" : " months");
+      const d = Math.round(g * 365.25);
+      return d + (d === 1 ? " day" : " days");
+    }
+
+    const ROWS = 6, ROWH = 17;
+    const ctx = document.createElement("canvas").getContext("2d");
+    function textWidth(s) {
+      ctx.font = "12px " + getComputedStyle(document.body).fontFamily;
+      return ctx.measureText(s).width;
+    }
+
+    function make(tag, cls, parent, text) {
+      const el = document.createElement(tag);
+      if (cls) el.className = cls;
+      if (text != null) el.textContent = text;
+      if (parent) parent.append(el);
+      return el;
+    }
+
+    function setup(id, rawEvents, opts) {
+      const root = document.getElementById(id);
+      const events = rawEvents.map(e => ({ ...e, y: toYear(e) })).sort((a, b) => a.y - b.y);
+      const start = opts.start != null ? opts.start : events[0].y;
+      const tl = { lo: start, hi: NOW, log: false };
+      const fmt = (y, short) => opts.fmt(y, short, tl.hi - tl.lo);
+
+      make("h3", "", root, "To scale");
+
+      // Controls
+      const controls = make("div", "controls", root);
+      const reset = make("button", "", controls, "Reset");
+      const logLabel = make("label", "", controls);
+      const logBox = make("input", "", logLabel);
+      logBox.type = "checkbox";
+      logLabel.append(" Log scale (time before now)");
+      const status = make("span", "status", controls);
+
+      // Strip and axis
+      const strip = make("div", "strip", root);
+      const axis = make("div", "axis", root);
+
+      // List
+      make("h3", "", root, "Event by event");
+      const list = make("div", "list", root);
+
+      const f = y => tl.log ? -Math.log10(Math.max(NOW - y, opts.eps)) : y;
+      const inv = v => tl.log ? NOW - Math.pow(10, -v) : v;
+
+      function renderStrip() {
+        const W = strip.clientWidth;
+        strip.innerHTML = "";
+        axis.innerHTML = "";
+        const flo = f(tl.lo), fhi = f(tl.hi);
+        const X = y => (f(y) - flo) / (fhi - flo) * W;
+
+        const rowEnd = new Array(ROWS).fill(-Infinity);
+        let shown = 0, hidden = 0;
+        for (const e of events) {
+          if (e.y < tl.lo || e.y > tl.hi) continue;
+          shown++;
+          const x = X(e.y);
+          const w = textWidth(e.label) + 6;
+          const right = x + w > W;
+          const s = right ? x - w : x;
+          let row = -1;
+          for (let c = 0; c < ROWS && row < 0; c++) {
+            let ok = rowEnd[c] < s - 4;
+            for (let k = c + 1; k < ROWS && ok; k++) if (rowEnd[k] >= x) ok = false;
+            if (ok) row = c;
+          }
+          if (row < 0) {
+            const t = make("div", "tick", strip);
+            t.style.left = x + "px";
+            t.title = e.label + " (" + fmt(e.y) + ")";
+            hidden++;
+            continue;
+          }
+          const l = make("div", "lbl" + (right ? " right" : ""), strip, e.label);
+          l.style.top = row * ROWH + "px";
+          if (right) l.style.right = (W - x) + "px"; else l.style.left = x + "px";
+          l.title = fmt(e.y);
+          rowEnd[row] = Math.max(rowEnd[row], right ? x : x + w);
+          for (let k = row + 1; k < ROWS; k++) rowEnd[k] = Math.max(rowEnd[k], x);
+        }
+        sel = make("div", "sel", strip);
+
+        const n = Math.max(2, Math.floor(W / 110));
+        for (let i = 0; i <= n; i++) {
+          const sp = make("span", "", axis, fmt(inv(flo + (i / n) * (fhi - flo)), true));
+          if (i === 0) sp.style.left = "0";
+          else if (i === n) sp.style.right = "0";
+          else { sp.style.left = (i / n * 100) + "%"; sp.style.transform = "translateX(-50%)"; }
+        }
+
+        status.textContent = shown + " events in view" +
+          (hidden ? ", " + hidden + " too crowded to label. Drag to zoom in." : ".");
+        reset.disabled = tl.lo === start && tl.hi === NOW;
+      }
+
+      function renderList() {
+        list.innerHTML = "";
+        const items = [...events, { y: NOW, label: "Now", now: true }];
+        items.forEach((e, i) => {
+          if (i > 0) {
+            const g = e.y - items[i - 1].y;
+            if (g * 365.25 >= 1) {
+              const gap = make("div", "gap", list, fmtGap(g));
+              gap.style.height = Math.max(16, 7 * Math.log10(g * 365.25 + 1)) + "px";
+            }
+          }
+          const row = make("div", "ev", list);
+          make("span", "when", row, e.now ? "" : fmt(e.y));
+          make("span", "", row, e.label + (e.note ? ": " + e.note : ""));
+        });
+      }
+
+      // Drag to zoom
+      let sel = null, x0 = null;
+      const px = ev => Math.min(Math.max(ev.clientX - strip.getBoundingClientRect().left, 0), strip.clientWidth);
+      strip.addEventListener("pointerdown", ev => {
+        x0 = px(ev);
+        strip.setPointerCapture(ev.pointerId);
+      });
+      strip.addEventListener("pointermove", ev => {
+        if (x0 == null) return;
+        const x1 = px(ev);
+        sel.style.display = "block";
+        sel.style.left = Math.min(x0, x1) + "px";
+        sel.style.width = Math.abs(x1 - x0) + "px";
+      });
+      strip.addEventListener("pointerup", ev => {
+        if (x0 == null) return;
+        const x1 = px(ev), W = strip.clientWidth;
+        const a = Math.min(x0, x1), b = Math.max(x0, x1);
+        x0 = null;
+        sel.style.display = "none";
+        if (b - a < 6) return;
+        const flo = f(tl.lo), fhi = f(tl.hi);
+        const lo = inv(flo + a / W * (fhi - flo)), hi = inv(flo + b / W * (fhi - flo));
+        if (hi - lo < 1 / 365.25) return;
+        tl.lo = lo; tl.hi = hi;
+        renderStrip();
+      });
+      strip.addEventListener("dblclick", () => { tl.lo = start; tl.hi = NOW; renderStrip(); });
+      reset.addEventListener("click", () => { tl.lo = start; tl.hi = NOW; renderStrip(); });
+      logBox.addEventListener("change", () => { tl.log = logBox.checked; renderStrip(); });
+
+      let t;
+      window.addEventListener("resize", () => { clearTimeout(t); t = setTimeout(renderStrip, 100); });
+      renderStrip();
+      renderList();
+    }
+
+    setup("deep", DEEP, { fmt: fmtDeep, eps: 1 });
+    setup("recent", RECENT, { fmt: fmtRecent, eps: 1 / 365.25, start: fracYear(1999, 1, 1) });
+  </script>
+</body>
+</html>
