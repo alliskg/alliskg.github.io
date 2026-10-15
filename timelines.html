@@ -5,6 +5,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
+    .opts { margin: 4px 0 8px; }
+    .opts summary { font-size: 14px; color: #555; cursor: pointer; }
     .controls { font-size: 14px; margin: 8px 0; display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
     .status { color: #555; }
     .strip { position: relative; height: 112px; border-bottom: 1px solid #333; cursor: crosshair; user-select: none; -webkit-user-select: none; touch-action: none; overflow: hidden; }
@@ -17,17 +19,26 @@
     .list { margin: 8px 0 0; }
     .ev { display: flex; flex-wrap: wrap; gap: 0 12px; padding: 2px 0; }
     .when { color: #555; min-width: 12em; }
+    .top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 16px 0; }
+    .top label { font-size: 14px; }
+    .sw { display: none; width: 9px; height: 9px; margin-right: 5px; }
+    body.colored .sw { display: inline-block; }
+    .lbl.c { border-left-width: 2px; }
+    .lbl.right.c { border-right-width: 2px; }
     .gap { box-sizing: border-box; margin-left: 5px; padding-left: 12px; border-left: 2px dotted #aaa; font-size: 12px; color: #777; display: flex; align-items: center; }
   </style>
 </head>
 <body>
-  <p><a href="index.html">← Home</a></p>
+  <div class="top">
+    <a href="index.html">← Home</a>
+    <label><input type="checkbox" id="colorBy"> Color by tag</label>
+  </div>
 
   <h1>Timelines</h1>
 
   <h2>Motive</h2>
   <p>I want a feel for where things sit in time, and for how much time sits between them. Each timeline shows the same events twice. The bar is to scale, so you can see how much of history collapses into the right edge. The list below it goes event by event, with the size of each gap written out.</p>
-  <p>Drag across a bar to zoom into that stretch. Double-click the bar or press Reset to zoom back out.</p>
+  <p>Drag across a bar to zoom into that stretch. Double-click the bar to zoom back out. Open "Scale and tags" under a bar for log scale and tag filters.</p>
 
   <h2>From the beginning</h2>
   <div class="timeline" id="deep"></div>
@@ -36,42 +47,59 @@
   <div class="timeline" id="recent"></div>
 
   <script>
+    // ---- Tags: name and color. Higher in the list = higher priority. ----
+    // With "Color by tag" on, each event takes the color of its highest-priority tag.
+    const TAGS = [
+      { name: "personal events", color: "#50c878" },  // emerald
+      { name: "historical figures", color: "#008080" }, // teal
+      { name: "society",         color: "#e4572e" },
+      { name: "technology",      color: "#d6457a" },
+      { name: "science",         color: "#1f77b4" },
+      { name: "space",           color: "#6a5acd" },
+      { name: "life",            color: "#d4a017" },
+      { name: "earth",           color: "#8b5a2b" },
+    ];
+
     // ---- Events: add more here. Order doesn't matter. ----
     // Use { ago: years-before-now }, { year: N } (negative = BCE), or { date: "YYYY-MM-DD" }.
-    // An optional note: "..." shows next to the event in the list.
+    // Optional: tags: ["tag", ...] using names from TAGS, and note: "..." shown in the list.
     const DEEP = [
-      { ago: 13.8e9, label: "Big Bang" },
-      { ago: 13.6e9, label: "First stars" },
-      { ago: 4.6e9,  label: "Sun and Solar System form" },
-      { ago: 4.54e9, label: "Earth forms" },
-      { ago: 4.5e9,  label: "Moon forms" },
-      { ago: 3.7e9,  label: "Earliest evidence of life" },
-      { ago: 2.4e9,  label: "Great Oxidation Event" },
-      { ago: 2.0e9,  label: "First complex (eukaryotic) cells" },
-      { ago: 538e6,  label: "Cambrian explosion" },
-      { ago: 470e6,  label: "First land plants" },
-      { ago: 375e6,  label: "First four-limbed animals on land" },
-      { ago: 252e6,  label: "Permian mass extinction" },
-      { ago: 230e6,  label: "First dinosaurs" },
-      { ago: 66e6,   label: "Dinosaurs go extinct" },
-      { ago: 300e3,  label: "Homo sapiens" },
-      { year: -10000, label: "Agriculture" },
-      { year: -3200, label: "Writing" },
-      { year: 1440,  label: "Printing press" },
-      { year: 1760,  label: "Industrial Revolution" },
-      { year: 1969,  label: "Moon landing" },
+      { ago: 13.8e9, label: "Big Bang", tags: ["space"] },
+      { ago: 13.6e9, label: "First stars", tags: ["space"] },
+      { ago: 4.6e9,  label: "Sun and Solar System form", tags: ["space"] },
+      { ago: 4.54e9, label: "Earth forms", tags: ["earth"] },
+      { ago: 4.5e9,  label: "Moon forms", tags: ["earth", "space"] },
+      { ago: 3.7e9,  label: "Earliest evidence of life", tags: ["life"] },
+      { ago: 2.4e9,  label: "Great Oxidation Event", tags: ["earth", "life"] },
+      { ago: 2.0e9,  label: "First complex (eukaryotic) cells", tags: ["life"] },
+      { ago: 538e6,  label: "Cambrian explosion", tags: ["life"] },
+      { ago: 470e6,  label: "First land plants", tags: ["life"] },
+      { ago: 375e6,  label: "First four-limbed animals on land", tags: ["life"] },
+      { ago: 252e6,  label: "Permian mass extinction", tags: ["life", "earth"] },
+      { ago: 230e6,  label: "First dinosaurs", tags: ["life"] },
+      { ago: 66e6,   label: "Dinosaurs go extinct", tags: ["life", "earth"] },
+      { ago: 300e3,  label: "Homo sapiens", tags: ["life"] },
+      { year: -10000, label: "Agriculture", tags: ["society"] },
+      { year: -3200, label: "Writing", tags: ["society"] },
+      { year: -750,  label: "Homer's Iliad first told", tags: ["historical figures", "society"], note: "c. 8th century BCE, as oral poetry" },
+      { year: -600,  label: "Oldest surviving Bible text", tags: ["historical figures", "society"], note: "c. 600 BCE, the Ketef Hinnom silver scrolls. Parts of the Hebrew Bible were composed earlier." },
+      { year: -399,  label: "Death of Socrates", tags: ["historical figures"] },
+      { year: 30,    label: "Crucifixion of Jesus", tags: ["historical figures"], note: "c. 30 to 33 CE" },
+      { year: 1440,  label: "Printing press", tags: ["technology", "society"] },
+      { year: 1760,  label: "Industrial Revolution", tags: ["technology", "society"] },
+      { year: 1969,  label: "Moon landing", tags: ["space", "technology"] },
     ];
 
     const RECENT = [
-      { date: "1999-01-01", label: "Euro introduced" },
-      { date: "2004-02-04", label: "Facebook launches" },
-      { date: "2007-06-29", label: "iPhone released" },
-      { date: "2008-09-15", label: "Lehman Brothers collapses" },
-      { date: "2012-07-04", label: "Higgs boson discovery announced" },
-      { date: "2015-09-14", label: "First gravitational waves detected" },
-      { date: "2017-06-12", label: "Transformer paper published" },
-      { date: "2020-03-11", label: "COVID-19 declared a pandemic" },
-      { date: "2022-11-30", label: "ChatGPT released" },
+      { date: "1999-01-01", label: "Euro introduced", tags: ["society"] },
+      { date: "2004-02-04", label: "Facebook launches", tags: ["technology"] },
+      { date: "2007-06-29", label: "iPhone released", tags: ["technology"] },
+      { date: "2008-09-15", label: "Lehman Brothers collapses", tags: ["society"] },
+      { date: "2012-07-04", label: "Higgs boson discovery announced", tags: ["science"] },
+      { date: "2015-09-14", label: "First gravitational waves detected", tags: ["science", "space"] },
+      { date: "2017-06-12", label: "Transformer paper published", tags: ["technology", "science"] },
+      { date: "2020-03-11", label: "COVID-19 declared a pandemic", tags: ["society"] },
+      { date: "2022-11-30", label: "ChatGPT released", tags: ["technology"] },
     ];
     // ---- End of events ----
 
@@ -139,23 +167,69 @@
       return el;
     }
 
+    const UNTAGGED = "untagged";
+    const tagRank = name => { const i = TAGS.findIndex(t => t.name === name); return i < 0 ? TAGS.length : i; };
+    const tagColor = name => (TAGS.find(t => t.name === name) || {}).color;
+    let colorOn = false;
+    const renderers = [];
+
     function setup(id, rawEvents, opts) {
       const root = document.getElementById(id);
-      const events = rawEvents.map(e => ({ ...e, y: toYear(e) })).sort((a, b) => a.y - b.y);
+      const events = rawEvents.map(e => ({ ...e, tags: e.tags || [], y: toYear(e) })).sort((a, b) => a.y - b.y);
       const start = opts.start != null ? opts.start : events[0].y;
       const tl = { lo: start, hi: NOW, log: false };
       const fmt = (y, short) => opts.fmt(y, short, tl.hi - tl.lo);
 
       make("h3", "", root, "To scale");
+      const optsBox = make("details", "opts", root);
+      make("summary", "", optsBox, "Scale and tags");
 
       // Controls
-      const controls = make("div", "controls", root);
+      const controls = make("div", "controls", optsBox);
       const reset = make("button", "", controls, "Reset");
       const logLabel = make("label", "", controls);
       const logBox = make("input", "", logLabel);
       logBox.type = "checkbox";
       logLabel.append(" Log scale (time before now)");
       const status = make("span", "status", controls);
+
+      // Tag filter
+      const tagNames = [...new Set(events.flatMap(e => e.tags))].sort((a, b) => tagRank(a) - tagRank(b));
+      if (events.some(e => !e.tags.length)) tagNames.push(UNTAGGED);
+      const selected = new Set(tagNames);
+      const isShown = e => e.tags.length ? e.tags.some(t => selected.has(t)) : selected.has(UNTAGGED);
+      const colorOf = e => {
+        if (!colorOn) return null;
+        const top = e.tags.filter(t => selected.has(t)).sort((a, b) => tagRank(a) - tagRank(b))[0];
+        return tagColor(top) || null;
+      };
+      const tagText = e => e.tags.length ? " · " + e.tags.join(", ") : "";
+      if (tagNames.length > 1 || (tagNames.length === 1 && tagNames[0] !== UNTAGGED)) {
+        const filters = make("div", "controls", optsBox);
+        make("span", "status", filters, "Show:");
+        const boxes = [];
+        for (const name of tagNames) {
+          const lab = make("label", "", filters);
+          const box = make("input", "", lab);
+          box.type = "checkbox";
+          box.checked = true;
+          box.addEventListener("change", () => {
+            if (box.checked) selected.add(name); else selected.delete(name);
+            render();
+          });
+          boxes.push([box, name]);
+          lab.append(" ");
+          const sw = make("span", "sw", lab);
+          sw.style.background = tagColor(name) || "transparent";
+          lab.append(name);
+        }
+        const setAll = on => {
+          for (const [box, name] of boxes) { box.checked = on; if (on) selected.add(name); else selected.delete(name); }
+          render();
+        };
+        make("button", "", filters, "All").addEventListener("click", () => setAll(true));
+        make("button", "", filters, "None").addEventListener("click", () => setAll(false));
+      }
 
       // Strip and axis
       const strip = make("div", "strip", root);
@@ -178,7 +252,8 @@
         const rowEnd = new Array(ROWS).fill(-Infinity);
         let shown = 0, hidden = 0;
         for (const e of events) {
-          if (e.y < tl.lo || e.y > tl.hi) continue;
+          if (!isShown(e) || e.y < tl.lo || e.y > tl.hi) continue;
+          const c = colorOf(e);
           shown++;
           const x = X(e.y);
           const w = textWidth(e.label) + 6;
@@ -193,14 +268,16 @@
           if (row < 0) {
             const t = make("div", "tick", strip);
             t.style.left = x + "px";
-            t.title = e.label + " (" + fmt(e.y) + ")";
+            t.title = e.label + " (" + fmt(e.y) + ")" + tagText(e);
+            if (c) { t.style.background = c; t.style.width = "2px"; }
             hidden++;
             continue;
           }
           const l = make("div", "lbl" + (right ? " right" : ""), strip, e.label);
           l.style.top = row * ROWH + "px";
           if (right) l.style.right = (W - x) + "px"; else l.style.left = x + "px";
-          l.title = fmt(e.y);
+          l.title = fmt(e.y) + tagText(e);
+          if (c) { l.classList.add("c"); l.style.borderColor = c; l.style.color = c; }
           rowEnd[row] = Math.max(rowEnd[row], right ? x : x + w);
           for (let k = row + 1; k < ROWS; k++) rowEnd[k] = Math.max(rowEnd[k], x);
         }
@@ -221,7 +298,7 @@
 
       function renderList() {
         list.innerHTML = "";
-        const items = [...events, { y: NOW, label: "Now", now: true }];
+        const items = [...events.filter(isShown), { y: NOW, label: "Now", now: true, tags: [] }];
         items.forEach((e, i) => {
           if (i > 0) {
             const g = e.y - items[i - 1].y;
@@ -232,7 +309,10 @@
           }
           const row = make("div", "ev", list);
           make("span", "when", row, e.now ? "" : fmt(e.y));
-          make("span", "", row, e.label + (e.note ? ": " + e.note : ""));
+          const what = make("span", "", row);
+          if (!e.now) make("span", "sw", what).style.background = colorOf(e) || "transparent";
+          what.append(e.label + (e.note ? ": " + e.note : ""));
+          if (e.tags.length) what.title = e.tags.join(", ");
         });
       }
 
@@ -269,9 +349,19 @@
 
       let t;
       window.addEventListener("resize", () => { clearTimeout(t); t = setTimeout(renderStrip, 100); });
-      renderStrip();
-      renderList();
+      function render() { renderStrip(); renderList(); }
+      renderers.push(render);
+      render();
     }
+
+    const colorBy = document.getElementById("colorBy");
+    function applyColor() {
+      colorOn = colorBy.checked;
+      document.body.classList.toggle("colored", colorOn);
+      renderers.forEach(r => r());
+    }
+    colorBy.addEventListener("change", applyColor);
+    window.addEventListener("pageshow", () => { if (colorBy.checked !== colorOn) applyColor(); });
 
     setup("deep", DEEP, { fmt: fmtDeep, eps: 1 });
     setup("recent", RECENT, { fmt: fmtRecent, eps: 1 / 365.25, start: fracYear(1999, 1, 1) });
