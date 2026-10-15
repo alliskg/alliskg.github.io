@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Places I've Lived and Been</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <style>
+    #map { height: 70vh; border: 1px solid #999; background: #fff; }
+    .legend { font-size: 14px; color: #555; margin: 6px 0; }
+    .legend span { display: inline-block; vertical-align: middle; margin: 0 4px 0 12px; }
+    .legend span:first-child { margin-left: 0; }
+    .sq { width: 12px; height: 12px; background: rgba(0, 148, 115, 0.45); border: 1px solid #009473; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #333; }
+    .warn { font-size: 14px; color: #a33; }
+  </style>
+</head>
+<body>
+  <p><a href="index.html">← Home</a></p>
+
+  <h1>Places I've lived and been</h1>
+
+  <div id="map"></div>
+  <p class="legend"><span class="sq"></span>lived <span class="dot"></span>visited</p>
+  <p class="warn" id="warn"></p>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+  <script>
+    // ---- Places: add more here. ----
+    // LIVED shades a region. Use a US county as "Harris County, TX" (or "Harris, Texas"),
+    // a whole US state as "West Virginia" or "WV",
+    // or a whole country by its English name, such as "France" or "Japan".
+    // from / to are years; leave out "to" if you still live there. note is optional.
+    const LIVED = [
+      { region: "Harris County, TX", from: 1999, note: "Born in Houston" },
+      { region: "Santa Clara County, CA", note: "Palo Alto" },
+      { region: "New York County, NY", note: "Upper West Side, Manhattan" },
+      { region: "Collier County, FL", note: "Naples" },
+      { region: "King County, WA", note: "Seattle" },
+      { region: "Suffolk County, MA", note: "Boston" },
+      { region: "West Virginia" },
+      { region: "Los Angeles County, CA", note: "Los Angeles" },
+    ];
+
+    // VISITED adds a dot. Get lat / lng by right-clicking a spot in Google Maps.
+    // date is "YYYY", "YYYY-MM", or "YYYY-MM-DD". note is optional.
+    const VISITED = [
+      { name: "Paris", lat: 48.857, lng: 2.352 },
+      { name: "Barcelona", lat: 41.385, lng: 2.173 },
+      { name: "Oslo", lat: 59.913, lng: 10.752 },
+      { name: "Amsterdam", lat: 52.370, lng: 4.895 },
+      { name: "London", lat: 51.507, lng: -0.128 },
+      { name: "Dublin", lat: 53.350, lng: -6.260 },
+      { name: "Interlaken", lat: 46.686, lng: 7.863 },
+      { name: "Geneva", lat: 46.204, lng: 6.143 },
+      { name: "Zurich", lat: 47.377, lng: 8.541 },
+      { name: "Tuscany", lat: 43.318, lng: 11.331, note: "Pinned at Siena, in central Tuscany" },
+      { name: "Florence", lat: 43.770, lng: 11.256 },
+      { name: "Rome", lat: 41.903, lng: 12.496 },
+      { name: "Venice", lat: 45.441, lng: 12.316 },
+      { name: "Athens", lat: 37.984, lng: 23.728 },
+      { name: "Prague", lat: 50.076, lng: 14.438 },
+      { name: "Warsaw", lat: 52.230, lng: 21.012 },
+      { name: "Łódź", lat: 51.759, lng: 19.456 },
+      { name: "Tokyo", lat: 35.681, lng: 139.767 },
+      { name: "Kyoto", lat: 35.011, lng: 135.768 },
+      { name: "Takayama", lat: 36.146, lng: 137.252 },
+      { name: "Seoul", lat: 37.566, lng: 126.978 },
+      { name: "Oahu", lat: 21.307, lng: -157.858, note: "Pinned at Honolulu" },
+      { name: "Olympic National Park", lat: 47.802, lng: -123.604 },
+      { name: "Whistler", lat: 50.116, lng: -122.957 },
+      { name: "Yosemite", lat: 37.746, lng: -119.593, note: "Pinned at Yosemite Valley" },
+      { name: "Napa", lat: 38.297, lng: -122.286 },
+      { name: "Sonoma", lat: 38.292, lng: -122.458 },
+      { name: "Vail", lat: 39.640, lng: -106.374 },
+      { name: "Steamboat Springs", lat: 40.485, lng: -106.832 },
+      { name: "Copper Mountain", lat: 39.502, lng: -106.151 },
+      { name: "San Antonio", lat: 29.424, lng: -98.494 },
+      { name: "Starbase, TX", lat: 25.997, lng: -97.157 },
+      { name: "Chicago", lat: 41.878, lng: -87.630 },
+      { name: "Atlanta", lat: 33.749, lng: -84.388 },
+      { name: "Orlando", lat: 28.538, lng: -81.379 },
+      { name: "Cape Canaveral", lat: 28.392, lng: -80.604 },
+      { name: "Sanibel", lat: 26.449, lng: -82.102 },
+      { name: "Florida Keys", lat: 24.714, lng: -81.090, note: "Pinned at Marathon, in the middle Keys" },
+      { name: "Washington, DC", lat: 38.907, lng: -77.037 },
+      { name: "Duke University, Durham, NC", lat: 36.001, lng: -78.938 },
+      { name: "Acadia National Park", lat: 44.339, lng: -68.273 },
+      { name: "Waterville, ME", lat: 44.552, lng: -69.632 },
+    ];
+    // ---- End of places ----
+
+    const LIVED_COLOR = "#009473";  // emerald, same as the Allison tag on Timelines
+    const DOT_COLOR = "#333";
+
+    const STATES = {
+      AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California", CO: "Colorado",
+      CT: "Connecticut", DE: "Delaware", DC: "District of Columbia", FL: "Florida", GA: "Georgia",
+      HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa", KS: "Kansas",
+      KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland", MA: "Massachusetts",
+      MI: "Michigan", MN: "Minnesota", MS: "Mississippi", MO: "Missouri", MT: "Montana",
+      NE: "Nebraska", NV: "Nevada", NH: "New Hampshire", NJ: "New Jersey", NM: "New Mexico",
+      NY: "New York", NC: "North Carolina", ND: "North Dakota", OH: "Ohio", OK: "Oklahoma",
+      OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina", SD: "South Dakota",
+      TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont", VA: "Virginia", WA: "Washington",
+      WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming", PR: "Puerto Rico",
+    };
+
+    const map = L.map("map", { worldCopyJump: true }).setView([30, 0], 2);
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}", {
+      maxZoom: 16,
+      attribution: "Tiles &copy; Esri &mdash; Esri, HERE, Garmin, FAO, NOAA, USGS",
+    }).addTo(map);
+
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    const norm = s => s.toLowerCase().replace(/\s+(county|parish|borough|census area|city and borough|municipality)$/, "").trim();
+    const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    function fmtDate(d) {
+      if (!d) return "";
+      const [y, m, day] = String(d).split("-").map(Number);
+      return (day ? day + " " : "") + (m ? MON[m - 1] + " " : "") + y;
+    }
+    function years(p) {
+      if (p.from == null) return "";
+      if (p.to == null) return "since " + p.from;
+      return p.from === p.to ? String(p.from) : p.from + " to " + p.to;
+    }
+
+    const bounds = L.latLngBounds([]);
+    const missing = [];
+
+    // Visited: small dots
+    for (const v of VISITED) {
+      const dot = L.circleMarker([v.lat, v.lng], {
+        radius: 5, color: "#fff", weight: 1, fillColor: DOT_COLOR, fillOpacity: 1,
+      }).addTo(map);
+      dot.bindPopup("<b>" + esc(v.name) + "</b>" +
+        (v.date ? "<br>" + esc(fmtDate(v.date)) : "") +
+        (v.note ? "<br>" + esc(v.note) : ""));
+      bounds.extend([v.lat, v.lng]);
+    }
+
+    // Lived: shaded regions
+    const STATE_NAMES = Object.values(STATES).map(n => n.toLowerCase());
+    const isState = r => !!STATES[r.trim().toUpperCase()] || STATE_NAMES.includes(r.trim().toLowerCase());
+    const counties = LIVED.filter(p => p.region.includes(","));
+    const states = LIVED.filter(p => !p.region.includes(",") && isState(p.region));
+    const countries = LIVED.filter(p => !p.region.includes(",") && !isState(p.region));
+
+    function shade(feature, p) {
+      const layer = L.geoJSON(feature, {
+        style: { color: LIVED_COLOR, weight: 1, fillColor: LIVED_COLOR, fillOpacity: 0.45 },
+      }).addTo(map);
+      layer.bindPopup("<b>" + esc(p.region) + "</b>" +
+        (years(p) ? "<br>" + esc(years(p)) : "") +
+        (p.note ? "<br>" + esc(p.note) : ""));
+      layer.bringToBack();
+      bounds.extend(layer.getBounds());
+    }
+
+    async function loadCounties() {
+      if (!counties.length && !states.length) return;
+      const topo = await (await fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/counties-10m.json")).json();
+      const stateName = {};
+      for (const g of topo.objects.states.geometries) stateName[g.id] = g.properties.name.toLowerCase();
+      const all = topojson.feature(topo, topo.objects.counties).features;
+      for (const p of counties) {
+        const [c, s] = p.region.split(",").map(x => x.trim());
+        const state = (STATES[s.toUpperCase()] || s).toLowerCase();
+        const f = all.find(f => norm(f.properties.name) === norm(c) && stateName[f.id.slice(0, 2)] === state);
+        if (f) shade(f, p); else missing.push(p.region);
+      }
+      const allStates = topojson.feature(topo, topo.objects.states).features;
+      for (const p of states) {
+        const r = p.region.trim();
+        const name = (STATES[r.toUpperCase()] || r).toLowerCase();
+        const f = allStates.find(f => f.properties.name.toLowerCase() === name);
+        if (f) shade(f, p); else missing.push(p.region);
+      }
+    }
+
+    async function loadCountries() {
+      if (!countries.length) return;
+      const topo = await (await fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json")).json();
+      const all = topojson.feature(topo, topo.objects.countries).features;
+      for (const p of countries) {
+        const f = all.find(f => f.properties.name.toLowerCase() === p.region.toLowerCase().trim());
+        if (f) shade(f, p); else missing.push(p.region);
+      }
+    }
+
+    Promise.all([loadCounties(), loadCountries()])
+      .catch(err => missing.push("map shapes failed to load (" + err.message + ")"))
+      .finally(() => {
+        if (bounds.isValid()) map.fitBounds(bounds, { padding: [30, 30], maxZoom: 6 });
+        if (missing.length) document.getElementById("warn").textContent = "Couldn't find: " + missing.join("; ");
+      });
+  </script>
+</body>
+</html>
