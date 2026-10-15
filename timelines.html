@@ -92,6 +92,8 @@
 
     const RECENT = [
       { date: "1999-01-01", label: "Euro introduced", tags: ["society"] },
+      { date: "1999-05-27", label: "Born in Houston, TX", tags: ["personal events"] },
+      { date: "2022-05", label: "Graduated college", tags: ["personal events"] },
       { date: "2004-02-04", label: "Facebook launches", tags: ["technology"] },
       { date: "2007-06-29", label: "iPhone released", tags: ["technology"] },
       { date: "2008-09-15", label: "Lehman Brothers collapses", tags: ["society"] },
@@ -136,8 +138,9 @@
       if (short && NOW - y < 1 / 365.25) return "now";
       if (short && span > 8) return String(Math.round(y));
       const yr = Math.floor(y);
-      const m = Math.min(11, Math.floor((y - yr) * 12));
-      return MON[m] + " " + yr;
+      const a = Date.UTC(yr, 0, 1), b = Date.UTC(yr + 1, 0, 1);
+      const d = new Date(a + (y - yr) * (b - a) + 12 * 3600e3);
+      return MON[d.getUTCMonth()] + " " + d.getUTCFullYear();
     }
 
     function fmtGap(g) {
