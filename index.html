@@ -7,9 +7,11 @@
   <style>
     .about { display: flex; gap: 20px; align-items: flex-start; }
     .about-text { flex: 1; }
-    .about img { width: 150px; height: auto; margin-top: 1em; }
-    @media (max-width: 480px) {
-      .about img { width: 110px; }
+    .photos { display: flex; gap: 8px; margin-top: 1em; }
+    .photos img { width: 150px; height: auto; }
+    @media (max-width: 700px) {
+      .about { flex-direction: column; gap: 0; }
+      .photos img { width: 110px; }
     }
   </style>
 </head>
@@ -25,7 +27,11 @@
 <h2>About me</h2>
 
 <div class="about">
-  <img src="me.jpg" alt="Photo of Allison" width="320" height="400">
+  <div class="photos">
+    <img src="me-1.jpg" alt="Photo of Allison as a kid" width="320" height="400">
+    <img src="me-2.jpg" alt="Photo of Allison" width="320" height="400">
+    <img src="me.jpg" alt="Photo of Allison" width="320" height="400">
+  </div>
   <div class="about-text">
     <p>I'm Allison.</p>
     <p><b>Studies</b>: Mathematics at Columbia (BA), Electrical Engineering at Stanford (MS)</p>
@@ -55,10 +61,7 @@ Vague Ideas:
 
 <h2>Writing</h2>
 <ul>
-  <li>What constitutes one's life's work?</li>
-  <li>What constitutes virtue? Wholeness approximated in the finite (suitably abstract, so you can't really disagree)</li>
-  <li>Finding balance between input, output, and synthesis -- Thinking vs. doing (thinking and reflecting are different)</li>
-  <li>Is there a good thing that converges to zero? There must be; otherwise a perfect God wouldn't create a realm bound by time</li>
+  <li>TBA</li>
 </ul>
 
 <h2>Miscellaneous/Blog</h2>
