@@ -4,19 +4,36 @@
   <title>Allison's Space</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    .about { display: flex; gap: 20px; align-items: flex-start; }
+    .about-text { flex: 1; }
+    .about img { width: 150px; height: auto; margin-top: 1em; }
+    @media (max-width: 480px) {
+      .about img { width: 110px; }
+    }
+  </style>
 </head>
 <body>
 <h1>Allison's Space</h1>
-
-<h2>About me</h2>
-
-<p>I'm Allison.</p>
 
 <h2>About this space</h2>
 
 <p>I'm making an artifact of what I'm working on and thinking about.</p>
 
 <p>I'm externalizing more to give more surface area for growth and connection. </p>
+
+<h2>About me</h2>
+
+<div class="about">
+  <img src="me.jpg" alt="Photo of Allison" width="320" height="400">
+  <div class="about-text">
+    <p>I'm Allison.</p>
+    <p><b>Studies</b>: Mathematics at Columbia (BA), Electrical Engineering at Stanford (MS)</p>
+    <p><b>Explored Interests</b>: abstract math (especially formal logic), computer science (verification, computability, data representation), philosophy (especially metaphysics), and finance and history of finance.</p>
+    <p><b>Hobbies</b>: tennis, skiing, reading literature and philosophy, hiking/wandering in nature/cities</p>
+    <p><b>Fun facts</b>: My middle name is Kiran, which I'm pretty fond of. Apparently it is inspired by "little dark one" in Irish (<i>Ciaran</i>) and "thread of light" in Sanskrit (<i>kirana</i>). I like that sunbeam or "thread of light" has both gentleness and intensity to it. I also like the duality of the dark and light name inspiration; it also matches my hair that grows in almost black and then bleaches in the sun. I also have trace Punjab and Irish heritage, so I guess it's fitting in that way as well. I'm mostly of Swiss/German descent though.</p>
+  </div>
+</div>
 
 <h2>Projects</h2>
 Misc:
@@ -29,23 +46,23 @@ Vague Ideas:
   <li>Personalized Knowledge System</li>
 </ul>
 
-<h2>Synthesizing</h2>
+<h2>Learning</h2>
 <ul>
   <li><a href="timelines.html">A Timeline of Every Historical Thing I learn</a></li>
   <li>Rederiving MHA: UE the basis of LLMs</li>
   <li>A [Study of the Development/Evolution Of] Economic Systems</li>
 </ul>
 
-<h2> Writing</h2>
+<h2>Writing</h2>
 <ul>
   <li>What constitutes one's life's work?</li>
   <li>What constitutes virtue? Wholeness approximated in the finite (suitably abstract, so you can't really disagree)</li>
-  <li>Finding balance between input, output, and synthesis</li>
+  <li>Finding balance between input, output, and synthesis -- Thinking vs. doing (thinking and reflecting are different)</li>
+  <li>Is there a good thing that converges to zero? There must be; otherwise a perfect God wouldn't create a realm bound by time</li>
 </ul>
 
-<h2>Documentation</h2>
+<h2>Miscellaneous/Blog</h2>
 <ul>
-  <li>I LLM'd muffins</li>
   <li><a href="places.html">Places I've lived and been</a></li>
 </ul>
 
@@ -54,7 +71,6 @@ Vague Ideas:
   <li><a href="books.html">Books</a></li>
   <li><a href="movies.html">Movies</a></li>
   <li><a href="quotes.html">Quotes</a></li>
-  <li><a href="images.html">Images</a></li>
 </ul>
 </body>
 </html>

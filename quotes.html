@@ -4,6 +4,12 @@
   <title>Quotes</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    summary { cursor: pointer; list-style: none; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: " \25B6"; font-size: 0.75em; }
+    details[open] > summary::after { content: " \25BC"; }
+  </style>
 </head>
 <body>
   <p><a href="index.html">← Home</a></p>
@@ -11,7 +17,36 @@
   <h1>Quotes</h1>
 
   <ol>
-    <li>All these moment will be lost in time like tears in the rain. -- Blade Runner (1982)</li>
+    <li>"All these moment will be lost in time like tears in the rain." -- Blade Runner (1982)</li>
+    <li>"Whether 'tis better in the mind to suffer the slings and arrows of outrageous fortune, or to take arms against a sea of troubles and by opposing end them" -- Hamlet (1600)</li>
+    <li>
+      <details>
+        <summary>"But I don't want comfort. I want God, I want poetry, I want real danger, I want freedom, I want goodness. I want sin." -- Brave New World (1932)</summary>
+        <ul>
+          <li>""In fact," said Mustapha Mond, "you're claiming the right to be unhappy. [...] "All right then," said the Savage defiantly, "I'm claiming the right to be unhappy.""
+          <li>"independence was not made for man-that it is an unnatural state"</li>
+          <li>"But my own experience has given me the 
+conviction that, quite apart from any such terrors or imaginings, the 
+religious sentiment tends to develop as we grow older; to develop be- 
+cause, as the passions grow calm, as the fancy and sensibilities are 
+less excited and less excitable, our reason becomes less troubled in its 
+working, less obscured by the images, desires and distractions, in 
+which it used to be absorbed; whereupon God emerges as from behind 
+a cloud; our soul feels, sees, turns towards the source of all light; 
+turns naturally and inevitably; for now that all that gave to the world 
+of sensations its life and charms has begun to leak away from us, now 
+that phenomenal existence is no more bolstered up by impressions 
+from within or from without, we feel the need to lean on something 
+that abides, something that will never play us false-a reality, an abso- 
+lute and everlasting truth. Yes, we inevitably turn to God; for this re- 
+ligious sentiment is of its nature so pure, so delightful to the soul that 
+experiences it, that it makes up to us for all our other losses."</li>
+          <li>"If you allowed yourselves to think of God, you wouldn't allow your- 
+selves to be degraded by pleasant vices. You'd have a reason for bear- 
+ing things patiently, for doing things with courage."</li>
+        </ul>
+      </details>
+    </li>
   </ol>
 </body>
 </html>
